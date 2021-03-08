@@ -1,5 +1,4 @@
-import Nanobus from 'nanobus';
-import { deepEqual, deepCopy, log, sleep } from './util';
+import { deepEqual, deepCopy, log } from './util';
 
 interface Task {
     id: string,
@@ -78,6 +77,8 @@ let test = () => {
     layer.onChange((newState: State, oldState: State) => {
         log('    🔶 state changed to ', newState);
     });
+
+    // can't subscribe to just one task
 
     // do actions
     log('adding 2 tasks');

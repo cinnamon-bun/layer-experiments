@@ -55,13 +55,13 @@ let test = async () => {
 
     // subscribe
     layer.bus.on('task:new', (task: Task) => {
-        log('    🔶 got event task:new', task);
+        log('    🔶🔶 got event task:new', task);
     });
     layer.bus.on('task:modified', (task: Task) => {
-        log('    🔶 got event task:modified', task);
+        log('    🔶🔶 got event task:modified', task);
     });
     layer.bus.on('task:deleted', (task: Task) => {
-        log('    🔶 got event task:deleted', task);
+        log('    🔶🔶 got event task:deleted', task);
     });
     layer.bus.on('*', () => { log('    🔶 got * event'); });
 

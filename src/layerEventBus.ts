@@ -1,5 +1,5 @@
 import Nanobus from 'nanobus';
-import { log, sleep } from './util';
+import { log } from './util';
 
 interface Task {
     id: string,
@@ -50,13 +50,13 @@ let test = () => {
 
     // subscribe
     layer.bus.on('task:added', (task: Task) => {
-        log('    🔶 got event task:added', task);
+        log('    🔶🔶 got event task:added', task);
     });
     layer.bus.on('task:changed', (task: Task) => {
-        log('    🔶 got event task:changed', task);
+        log('    🔶🔶 got event task:changed', task);
     });
     layer.bus.on('task:deleted', (task: Task) => {
-        log('    🔶 got event task:deleted', task);
+        log('    🔶🔶 got event task:deleted', task);
     });
     layer.bus.on('*', () => { log('    🔶 got * event'); });
 
