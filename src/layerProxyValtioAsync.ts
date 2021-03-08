@@ -76,10 +76,7 @@ let test = async () => {
 
     // subscribe to all tasks
     subscribe(layer.state, () => {
-        // BUG in Valtio:
-        // can't JSON.stringify the state or snapshot(state) --
-        // how to get a plain un-proxied object back?
-        log('    🔶 state was changed to:', layer.state);
+        log('    🔶 state was changed to:', JSON.stringify(layer.state, null, 4));
     }, true);  // set this false to coalesce consecutive events in the same tick
 
     // subscribe to a specific task
