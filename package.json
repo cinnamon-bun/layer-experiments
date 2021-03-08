@@ -1,0 +1,26 @@
+{
+  "name": "laye-experiments",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "repository": "",
+  "author": "Cinnamon <cinnamon_bun_github@fastmail.com>",
+  "license": "ISC",
+  "scripts": {
+    "clean": "rm -rf build coverage .nyc_output",
+    "build": "tsc",
+    "start": "node build/index.js",
+    "test": "tap -Rspecy --jobs=1 build/test/*.test.js",
+    "test-coverage": "npm test -- --coverage-report=lcov",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^14.14.25",
+    "@types/tap": "^14.10.2",
+    "tap": "^14.11.0",
+    "typescript": "^4.1.4"
+  },
+  "dependencies": {
+    "nanobus": "^4.5.0"
+  }
+}
