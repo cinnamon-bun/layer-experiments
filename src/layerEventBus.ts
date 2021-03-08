@@ -1,6 +1,5 @@
 import Nanobus from 'nanobus';
-
-let log = console.log;
+import { log, sleep } from './util';
 
 interface Task {
     id: string,
@@ -21,6 +20,9 @@ export class LayerEventBus {
         this.tasks[task.id] = task;
         this.bus.emit('task:new', task);
     }
+    get(id: string) {
+        return this.tasks[id];
+    }
     toggle(id: string) {
         this.tasks[id].done = !this.tasks[id].done;
         this.bus.emit('task:modified', this.tasks[id]);
@@ -34,6 +36,7 @@ export class LayerEventBus {
 
 let layer = new LayerEventBus();
 
+// subscribe
 layer.bus.on('task:new', (task: Task) => {
     log('    got event task:new', task);
 });
