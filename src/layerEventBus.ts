@@ -6,6 +6,7 @@ interface Task {
     text: string,
     done: boolean,
 }
+
 /*
  * This class emits different kinds of events
  *  when tasks are added, changed, or deleted.

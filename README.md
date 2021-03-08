@@ -1,3 +1,3 @@
-# Catenator
+# Earthtar Layer Experiments
 
-A game about building words out of parts of other words.
+Experiments with different ways of structuring layer classes for Earthstar.
