@@ -50,28 +50,33 @@ export class LayerWithState {
         this.prevState = deepCopy(this.state);
     }
     // read
-    list() {
+    async list() {
+        await sleep(400);
         return Object.values(this.state.tasks);
     }
-    get(id: string) {
+    async get(id: string) {
+        await sleep(400);
         return this.state.tasks[id];
     }
     // write
-    add(task: Task) {
+    async add(task: Task) {
+        await sleep(400);
         this.state.tasks[task.id] = task;
         this._notify();
     }
-    toggle(id: string) {
+    async toggle(id: string) {
+        await sleep(400);
         this.state.tasks[id].done = !this.state.tasks[id].done;
         this._notify();
     }
-    delete(id: string) {
+    async delete(id: string) {
+        await sleep(400);
         delete this.state.tasks[id];
         this._notify();
     }
 }
 
-let test = () => {
+let test = async () => {
     let layer = new LayerWithState();
 
     // subscribe
@@ -81,16 +86,16 @@ let test = () => {
 
     // do actions
     log('adding 2 tasks');
-    layer.add({ id: 'abc', text: 'get apples', done: false });
-    layer.add({ id: 'xyz', text: 'get bananas', done: false });
+    await layer.add({ id: 'abc', text: 'get apples', done: false });
+    await layer.add({ id: 'xyz', text: 'get bananas', done: false });
 
-    log('list of tasks', JSON.stringify(layer.list(), null, 4));
+    log('list of tasks', JSON.stringify(await layer.list(), null, 4));
 
     log('toggling a task');
-    layer.toggle('abc');
+    await layer.toggle('abc');
 
     log('deleting a task');
-    layer.delete('abc');
+    await layer.delete('abc');
 };
 test();
 

@@ -7,6 +7,15 @@ interface Task {
     done: boolean,
 }
 
+/*
+ * This class emits different kinds of events
+ *  when tasks are added, changed, or deleted.
+ * You can subscribe to one kind of event,
+ *  or use '*' to subscribe to all events.
+ * You can't subscribe to events for a specific todo,
+ *  although that would be possible if we also emit events
+ *  like `task:added:${task.id}`.
+ */
 export class LayerEventBusAsync {
     bus: any;
     tasks: Record<string, Task> = {};
