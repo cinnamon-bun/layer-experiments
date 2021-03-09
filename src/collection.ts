@@ -23,6 +23,9 @@ type EventName = 'changed' | 'added' | 'deleted' | '*';
  * 
  * When reading items or ids, they are always sorted by id.
  */
+
+// TODO: add ability to subscribe to changes in a specific item, by id.
+
 export class Collection<T> {
     _bus: any;
     _items: Record<string, T> = {};
