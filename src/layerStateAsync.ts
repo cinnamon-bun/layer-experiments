@@ -1,4 +1,4 @@
-import { deepEqual, deepCopy, log, sleep } from './util';
+import { deepEqual, deepCopy, log, sleep } from './utils';
 
 interface Task {
     id: string,

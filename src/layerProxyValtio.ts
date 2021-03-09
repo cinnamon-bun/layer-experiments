@@ -1,5 +1,5 @@
 import { proxy, subscribe, snapshot } from 'valtio/vanilla';
-import { log } from './util';
+import { log } from './utils';
 
 // Valtio didn't define this for the vanilla, non-React version
 // so I had to copy-paste it here.

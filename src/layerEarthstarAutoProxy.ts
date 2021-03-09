@@ -8,7 +8,7 @@ import {
     ValidatorEs4,
     WriteEvent
 } from 'earthstar';
-import { log } from './util';
+import { log } from './utils';
 
 import { makeStorageProxy } from './earthstarAutoProxy';
 

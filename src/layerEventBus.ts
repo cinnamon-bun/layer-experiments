@@ -1,5 +1,5 @@
 import Nanobus from 'nanobus';
-import { log } from './util';
+import { log } from './utils';
 
 interface Task {
     id: string,
