@@ -11,11 +11,18 @@ type EventName = 'changed' | 'added' | 'deleted' | '*';
  * and subscribing to changes in the items.
  * 
  * The change events and their callback signatures are:
- *    'changed'    callback('changed', { prev, new })
- *    'added'      callback('added', item)
- *    'deleted'    callback('deleted', item)
+ *    'changed'         callback('changed', { prev, new })
+ *    'added'           callback('added', item)
+ *    'deleted'         callback('deleted', item)
  * 
- * You can also subscribe to the channel '*' to get all events.
+ *    'changed:${id}'   callback('changed:${id}', { prev, new })
+ *    'added:${id}'     callback('added:${id}', item)
+ *    'deleted:${id}'   callback('deleted:${id}', item)
+ * 
+ * You can also subscribe to the channel '*' to get all events,
+ * though unfortunately you will get two events for each change
+ * ("changed" and "changed:ID") so you will need to filter out
+ * events that contain ':' in their names to remove duplicates.
  * 
  * The 'changed' event checks for deep equality first and only
  * fires if the object is actually changed, not just a new object
@@ -23,8 +30,6 @@ type EventName = 'changed' | 'added' | 'deleted' | '*';
  * 
  * When reading items or ids, they are always sorted by id.
  */
-
-// TODO: add ability to subscribe to changes in a specific item, by id.
 
 export class Collection<T> {
     _bus: any;
@@ -39,9 +44,16 @@ export class Collection<T> {
     // SUBSCRIPTIONS
 
     on(channel: EventName, cb: (...args: any) => void): Thunk {
-        this._bus.on(channel, cb);
+        // subscribe to a nanobus channel.
+
+        // make the callback unique so we have more normal semantics around unsubscribing,
+        // since nanobus unsubscribes using the identity of the callback
+        let cb2 = (...args: any) => cb(...args);
+
+        this._bus.on(channel, cb2);
+
         // return an unsubscribe thunk
-        return () => this._bus.removeListener(channel, cb);
+        return () => this._bus.removeListener(channel, cb2);
     }
 
     //----------------------------------------
@@ -54,10 +66,12 @@ export class Collection<T> {
             this._items[id] = item;
             if (!deepEqual(prev, item)) {
                 this._bus.emit('changed', { prev: prev, new: item });
+                this._bus.emit(`changed:${id}`, { prev: prev, new: item });
             }
         } else {
             this._items[id] = item;
             this._bus.emit('added', item);
+            this._bus.emit(`added:${id}`, item);
         }
     }
     delete(id: string): boolean {
@@ -66,6 +80,7 @@ export class Collection<T> {
         if (item) {
             delete this._items[id];
             this._bus.emit('deleted', item);
+            this._bus.emit(`deleted:${id}`, item);
             return true;
         } else {
             return false;
