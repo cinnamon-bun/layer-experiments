@@ -1,8 +1,6 @@
-import Nanobus from 'nanobus';
 import { log } from './utils';
 import { Collection } from './collection';
 import { Document, AuthorKeypair, IStorage, WriteEvent, generateAuthorKeypair, StorageMemory, ValidatorEs4, isErr } from 'earthstar';
-import { isMainThread } from 'node:worker_threads';
 
 //================================================================================
 // PATHS
@@ -42,6 +40,30 @@ let taskIsComplete = (task: Task | PartialTask): boolean =>
 
 //================================================================================
 
+/*
+ * A style of making Layers which pre-loads everything into a
+ *  cache in memory, which we call an index.
+ * 
+ * As docs are changed in Earthstar, the index is updated.
+ * 
+ * There's only one code path for updating the index, and it
+ *  operates on one document at a time.  It's used for the
+ *  initial batch load of the index, and also for later
+ *  updates to Earthstar documents.  It's called _ingestOneDoc.
+ * 
+ * In this case we're using a Collection as the API for apps to
+ *  read and subscribe to changes in the index.  It seems silly
+ *  to duplicate all the read and subscribe functionality into
+ *  methods of this Layer.
+ * 
+ * However for writes to the Tasks, we provide our own API methods
+ *  on the Layer.  These writes...
+ *    1. Go directly down to Earthstar document writes
+ *    2. Are then picked up by the indexing method which
+ *        updates the Collection
+ *    3. Then trickle back into the app through the
+ *        Collection's events
+ */
 export class LayerIndex {
     storage: IStorage;
 
@@ -241,15 +263,15 @@ let test = () => {
     let layer = new LayerIndex(storage);
 
     // subscribe
-    layer.tasks.on('added', (task: Task) => {
+    let unsub1 = layer.tasks.on('added', (task: Task) => {
         log('    🔶🔶 task was added', task);
     });
-    layer.tasks.on('changed', (data: { prev: Task, new: Task }) => {
+    let unsub2 = layer.tasks.on('changed', (data: { prev: Task, new: Task }) => {
         log('    🔶🔶 task was changed');
         log('                from:', data.prev);
         log('                  to:', data.new);
     });
-    layer.tasks.on('deleted', (task: Task) => {
+    let unsub3 = layer.tasks.on('deleted', (task: Task) => {
         log('    🔶🔶 task was deleted', task);
     });
     //layer.tasks.on('*', () => { log('    🔶 got * event'); });
@@ -274,10 +296,13 @@ let test = () => {
     layer.delete(keypair, 'aaa');
 
     log('');
-    log('💛 shutting down old layer');
+    log('💛 disconnecting from original layer');
     // Note this just removes our listeners here in test(), we should
     // also add a layer.close() method that disconnects it from storage events
-    layer.tasks.bus.removeAllListeners();
+    // so it can stop updating its index.
+    unsub1();
+    unsub2();
+    unsub3();
 
     log('');
     log('💛 making new layer to test batch loading of existing data');

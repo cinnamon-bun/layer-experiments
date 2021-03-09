@@ -1,0 +1,67 @@
+💛 creating Layer
+        🔷 Layer.constructor: subscribing to storage writes
+        🔷 Layer._load(): loading 0 docs from the IStorage at startup
+
+💛 adding 2 tasks
+        🔷 Layer.set("aaa")
+        🔷 Layer._ingestOneDoc: /tasks-v1/aaa/done.json
+        🔷                    ... XX task is NOT complete
+        🔷 Layer._ingestOneDoc: /tasks-v1/aaa/text.txt
+        🔷                    ... :) task is complete!
+    🔶🔶 task was added { id: 'aaa', done: false, text: 'apples' }
+        🔷 Layer.set("bbb")
+        🔷 Layer._ingestOneDoc: /tasks-v1/bbb/done.json
+        🔷                    ... XX task is NOT complete
+        🔷 Layer._ingestOneDoc: /tasks-v1/bbb/text.txt
+        🔷                    ... :) task is complete!
+    🔶🔶 task was added { id: 'bbb', done: false, text: 'bananas' }
+💛 list of ids [ 'aaa', 'bbb' ]
+💛 list of tasks [
+  { id: 'aaa', done: false, text: 'apples' },
+  { id: 'bbb', done: false, text: 'bananas' }
+]
+
+💛 toggling a task
+        🔷 Layer.toggle("aaa")
+        🔷 Layer._ingestOneDoc: /tasks-v1/aaa/done.json
+        🔷                    ... :) task is complete!
+    🔶🔶 task was changed
+                from: { id: 'aaa', done: false, text: 'apples' }
+                  to: { id: 'aaa', done: true, text: 'apples' }
+💛 modifying a task
+        🔷 Layer.set("bbb")
+        🔷 Layer._ingestOneDoc: /tasks-v1/bbb/done.json
+        🔷                    ... :) task is complete!
+        🔷 Layer._ingestOneDoc: /tasks-v1/bbb/text.txt
+        🔷                    ... :) task is complete!
+    🔶🔶 task was changed
+                from: { id: 'bbb', done: false, text: 'bananas' }
+                  to: { id: 'bbb', done: false, text: 'bananas!!!' }
+💛 deleting a task
+        🔷 Layer.delete("aaa")
+        🔷 Layer._ingestOneDoc: /tasks-v1/aaa/text.txt
+        🔷                    ... XX task is NOT complete
+    🔶🔶 task was deleted { id: 'aaa', done: true, text: 'apples' }
+        🔷 Layer._ingestOneDoc: /tasks-v1/aaa/done.json
+        🔷                    ... XX task is NOT complete
+
+💛 disconnecting from original layer
+
+💛 making new layer to test batch loading of existing data
+        🔷 Layer.constructor: subscribing to storage writes
+        🔷 Layer._load(): loading 4 docs from the IStorage at startup
+        🔷 Layer._ingestOneDoc: /tasks-v1/aaa/done.json
+        🔷                    ... XX task is NOT complete
+        🔷 Layer._ingestOneDoc: /tasks-v1/aaa/text.txt
+        🔷                    ... XX task is NOT complete
+        🔷 Layer._ingestOneDoc: /tasks-v1/bbb/done.json
+        🔷                    ... XX task is NOT complete
+        🔷 Layer._ingestOneDoc: /tasks-v1/bbb/text.txt
+        🔷                    ... :) task is complete!
+
+💛 list of ids [ 'bbb' ]
+💛 list of tasks [ { id: 'bbb', done: false, text: 'bananas!!!' } ]
+
+💛 closing storage and shutting down
+        🔷 Layer: storage is closing; unsubscribing from it
+        🔷 Layer: storage is closing; unsubscribing from it
