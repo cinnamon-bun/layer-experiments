@@ -11,8 +11,9 @@
     "build": "tsc",
     "start": "node build/index.js",
     "test": "tap -Rspecy --jobs=1 build/test/*.test.js",
-    "test-coverage": "npm test -- --coverage-report=lcov",
-    "prepublishOnly": "npm run clean && npm run build"
+    "build-and-test": "yarn build && yarn test",
+    "test-coverage": "yarn test -- --coverage-report=lcov",
+    "prepublishOnly": "yarn run clean && yarn run build"
   },
   "devDependencies": {
     "@types/node": "^14.14.25",
