@@ -1,0 +1,23 @@
+adding 2 tasks
+    🔶🔶 got event task:added { id: 'abc', text: 'get apples', done: false }
+    🔶 got * event
+    🔶🔶 got event task:added { id: 'xyz', text: 'get bananas', done: false }
+    🔶 got * event
+list of tasks [
+    {
+        "id": "abc",
+        "text": "get apples",
+        "done": false
+    },
+    {
+        "id": "xyz",
+        "text": "get bananas",
+        "done": false
+    }
+]
+toggling a task
+    🔶🔶 got event task:changed { id: 'abc', text: 'get apples', done: true }
+    🔶 got * event
+deleting a task
+    🔶🔶 got event task:deleted { id: 'abc', text: 'get apples', done: true }
+    🔶 got * event

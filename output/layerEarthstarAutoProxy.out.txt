@@ -1,0 +1,22 @@
+adding 2 tasks, "aaa" and "bbb"
+list of tasks: [
+  { id: 'aaa', done: false, text: 'get apples' },
+  { id: 'bbb', done: false, text: 'get bananas' }
+]
+since we read every task, we are now subscribed to events from every task.
+
+toggling task "aaa"
+    🔶🔶 taskEvent { kind: 'CHANGE', id: 'aaa' }
+deleting task "aaa"
+    🔶🔶 taskEvent { kind: 'DELETE', id: 'aaa' }
+
+clearing watches; we are no longer subscribed to anything.
+deleting "bbb" (should not trigger an event)
+
+adding 2 new tasks, "fff" and "ggg"
+get("fff") = { id: 'fff', text: 'get fish', done: false }
+now we've subscribed to "fff" just by getting it.
+
+editing "fff" should send an event
+    🔶🔶 taskEvent { kind: 'CHANGE', id: 'fff' }
+editing "ggg" should not

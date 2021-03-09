@@ -1,0 +1,29 @@
+adding 2 tasks
+    🔶 state changed to  { tasks: { abc: { id: 'abc', text: 'get apples', done: false } } }
+    🔶 state changed to  {
+  tasks: {
+    abc: { id: 'abc', text: 'get apples', done: false },
+    xyz: { id: 'xyz', text: 'get bananas', done: false }
+  }
+}
+list of tasks [
+    {
+        "id": "abc",
+        "text": "get apples",
+        "done": false
+    },
+    {
+        "id": "xyz",
+        "text": "get bananas",
+        "done": false
+    }
+]
+toggling a task
+    🔶 state changed to  {
+  tasks: {
+    abc: { id: 'abc', text: 'get apples', done: true },
+    xyz: { id: 'xyz', text: 'get bananas', done: false }
+  }
+}
+deleting a task
+    🔶 state changed to  { tasks: { xyz: { id: 'xyz', text: 'get bananas', done: false } } }
