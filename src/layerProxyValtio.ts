@@ -1,23 +1,6 @@
-import { proxy, subscribe, snapshot } from 'valtio/vanilla';
+import { proxy, subscribe, snapshot } from 'valtio';
+import { subscribeKey } from 'valtio/utils';
 import { log } from './utils';
-
-// Valtio didn't define this for the vanilla, non-React version
-// so I had to copy-paste it here.
-export const subscribeKey = <T extends object>(
-    proxyObject: T,
-    key: keyof T,
-    callback: (value: T[typeof key]) => void,
-    notifyInSync?: boolean,
-) => {
-    let prevValue = proxyObject[key];
-    return subscribe(proxyObject, () => {
-        const nextValue = proxyObject[key];
-        if (!Object.is(prevValue, nextValue)) {
-            callback((prevValue = nextValue));
-        }
-    }, notifyInSync);
-};
-
 
 interface Task {
     id: string,
