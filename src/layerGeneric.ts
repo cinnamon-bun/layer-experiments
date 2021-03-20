@@ -21,11 +21,12 @@ import chalk = require('chalk');
 
 //================================================================================
 
+let nop = (...args: any[]) => {};
 let log = console.log;
 let logTest =  (...args: any[]) => console.log(chalk.red(       'TEST     '), ...args);
 let logApp  =  (...args: any[]) => console.log(chalk.greenBright('  APP      '), ...args);
-let logLayer = (...args: any[]) => console.log(chalk.blueBright( '    LAYER    '), ...args);
-let logParts = (...args: any[]) => console.log(chalk.magenta(    '      PARTS    '), ...args);
+let logLayer = (...args: any[]) => nop; // console.log(chalk.blueBright( '    LAYER    '), ...args);
+let logParts = (...args: any[]) => nop; // console.log(chalk.magenta(    '      PARTS    '), ...args);
 
 //================================================================================
 // basic ingredients for making layers
@@ -67,7 +68,6 @@ abstract class LayerParts<D> {
 // kinds of Layers:
 
 class IndexedLayer<D> {
-    onChange: Emitter<any>;
     index: Index<D>;
     unsubFromStorage: (() => void) | null = null;
     constructor(public layerParts: LayerParts<D>, public storage: IStorageAsync) {
@@ -76,7 +76,6 @@ class IndexedLayer<D> {
             ready: new Collection<D>(),
             unfinished: new Collection<D>(),
         }
-        this.onChange = new Emitter<any>();
         this.unsubFromStorage = storage.onWrite.subscribe((evt: WriteEvent) => {
             this._handleOnWrite(evt);
         });
@@ -89,29 +88,51 @@ class IndexedLayer<D> {
         if (this.unsubFromStorage !== null) { this.unsubFromStorage(); } 
     }
     _handleOnWrite(writeEvent: WriteEvent) {
-        logLayer('handling onWrite from storage:', writeEvent);
+        let X = chalk.red('>');
+        logLayer(X + 'handling onWrite from storage:', JSON.stringify(writeEvent.document.path), JSON.stringify(writeEvent.document.content));
         // The Storage has gotten a write, either because we just set() it
         // or something arrived in a synchronization.
 
         // we get one doc write event at a time.
         // if it's not a latest doc, ignore it.
         if (!writeEvent.isLatest) {
-            logLayer("...it's not latest; ignoring");
+            logLayer(X + "...it's not latest; ignoring");
             return;
         }
         // filter it for interestingness
         if (!this.layerParts.docIsRelevant('*', writeEvent.document)) {
-            logLayer("...it's not relevant; ignoring");
+            logLayer(X + "...it's not relevant; ignoring");
             return;
         }
-        // if it's interesting, send an onChange event up out of the layer.
-        // this might be a false alarm since the whole domain object might
-        // not have been assembled yet.
-        logLayer("...it IS relevant; sending onChange to app");
-        this.onChange.send(true);
+        // send it to the index.
+        logLayer(X + '...it IS relevant;');
+        logLayer(X + '   ...updating the index');
+        this.layerParts.updateIndex(writeEvent.document, this.index);
+        logLayer(X + '...onWrite handler is done');
     }
-    async get(id: Id): Promise<D | undefined> {
-        logLayer(`get(${JSON.stringify(id)})`);
+    getTimidly(id: Id): D | undefined {
+        logLayer(`getTimidly(${JSON.stringify(id)})`);
+        // try to just return something from the index
+        let existing = this.index.ready.get(id);
+        if (existing !== undefined) {
+            logLayer('...found it in the index right away');
+            return existing;
+        }
+        logLayer("...it's not in the index.  giving up.");
+    }
+    getAndQueryLater(id: Id): D | undefined {
+        logLayer(`getAndQueryLater(${JSON.stringify(id)})`);
+        // try to just return something from the index
+        let existing = this.index.ready.get(id);
+        if (existing !== undefined) {
+            logLayer('...found it in the index right away');
+            return existing;
+        }
+        logLayer("...it's not in the index.  launching getAndQuery but not waiting for it to finish.");
+        process.nextTick(() => this.getAndQuery(id));
+    }
+    async getAndQuery(id: Id): Promise<D | undefined> {
+        logLayer(`getAndQuery(${JSON.stringify(id)})`);
         // try to just return something from the index
         let existing = this.index.ready.get(id);
         if (existing !== undefined) {
@@ -125,7 +146,7 @@ class IndexedLayer<D> {
         let docs = await this.storage.documents(query);
         logLayer(`...got ${docs.length} docs`);
         docs = docs.filter(doc => this.layerParts.docIsRelevant(id, doc));
-        logLayer(`...${docs.length} of them were relevant; giving up`);
+        logLayer(`...${docs.length} of them were relevant.  If zero, giving up.`);
         if (docs.length === 0) { return undefined; }
         logLayer('...updating index');
         for (let doc of docs) {
@@ -146,9 +167,10 @@ class IndexedLayer<D> {
         // convert the domainObject into a series of docs to write
         logLayer(`setState(${JSON.stringify(id)}, ${JSON.stringify(domainObject)})`);
         let docsToSet = this.layerParts.docsForSetState(id, domainObject);
-        logLayer(`...${docsToSet.length} docs to set`);
+        logLayer(`...writing ${docsToSet.length} docs`);
         // write them
         for (let docToSet of docsToSet) {
+            logLayer(`   ${JSON.stringify(docToSet)}`);
             let err = this.storage.set(keypair, docToSet);
             if (isErr(err)) {
                 console.error(err);
@@ -192,6 +214,7 @@ class TodoLayerParts extends LayerParts<Todo> {
 
     // if id is '*', query for all possible docs we care about
     queryForDocs(id: Id): Query {
+        logParts(`queryForDocs(${JSON.stringify(id)})`);
         if (id === '*') {
             return { pathStartsWith: '/todos/v1/' };
         } else {
@@ -201,8 +224,10 @@ class TodoLayerParts extends LayerParts<Todo> {
 
     // filter the query results to only the ones we want
     docIsRelevant(idWanted: Id, doc: Document): boolean {
+        logParts(`docIsRelevant(${JSON.stringify(idWanted)}, ${JSON.stringify(doc.path)})`);
         // keep when content === '' -- we need to know about about deletions
         let parsed = this._parsePath(doc.path);
+        logParts('...parsed doc path:', parsed);
         if (typeof parsed === 'string') { return false; }
         let { id: idFound, filename } = parsed;
         if (idWanted !== '*' && idWanted !== idFound) { return false; }
@@ -213,6 +238,7 @@ class TodoLayerParts extends LayerParts<Todo> {
     // merge any relevant docs into the index
     // which will emit events from index.ready.on('added' | 'added' | 'deleted')
     updateIndex(doc: Document, index: Index<Todo>): void {
+        logParts(`updateIndex with doc: ${JSON.stringify(doc.path)}, ${JSON.stringify(doc.content)}`);
         // parse path
         let parsed = this._parsePath(doc.path);
         if (typeof parsed === 'string') { return; }
@@ -223,6 +249,7 @@ class TodoLayerParts extends LayerParts<Todo> {
             index.ready.get(id)
             || index.unfinished.get(id)
             || { id: id };
+        logParts('...existing todo:', JSON.stringify(todo));
 
         // add, update, or remove Todo properties
         if (filename === 'text.txt') {
@@ -241,9 +268,11 @@ class TodoLayerParts extends LayerParts<Todo> {
 
         // move or add into appropriate index
         if (this._todoIsComplete(todo)) {
+            logParts('...todo is complete:', JSON.stringify(todo));
             index.unfinished.delete(id);
             index.ready.set(id, todo as Todo);
         } else {
+            logParts('...todo is NOT complete:', JSON.stringify(todo));
             index.ready.delete(id);
             index.unfinished.set(id, todo);
         }
@@ -251,18 +280,19 @@ class TodoLayerParts extends LayerParts<Todo> {
 
     // return a set of docs we should save to the storage
     docsForSetState(id: Id, todo: Partial<Todo>): DocToSet[] {
+        logParts(`docsForSetState(${JSON.stringify(id)}, ${JSON.stringify(todo)})`);
         let docs: DocToSet[] = [];
         if (todo.text !== undefined) {
             docs.push({
                 format: 'es.4',
-                path: `/todo/v1/${id}/text.txt`,
+                path: this._makePath(id, 'text.txt'),
                 content: todo.text,
             });
         }
         if (todo.done !== undefined) {
             docs.push({
                 format: 'es.4',
-                path: `/todo/v1/${id}/done.json`,
+                path: this._makePath(id, 'done.json'),
                 content: todo.done === true ? 'true' : 'false',
             });
         }
@@ -282,32 +312,147 @@ let main = async () => {
 
     let layer = new IndexedLayer(new TodoLayerParts(), storage);
 
-    log('');
-    logApp('subscribing to layer events (index and onChange)');
-    layer.onChange.subscribe(() => {
-        logApp('got onChange event from layer');
-    });
+    let hr = '-----------------------------------';
+
+    let showIndex = () => {
+        logLayer('======== index ========')
+        for (let todo of layer.index.ready.items()) {
+            logLayer(' :) ',  todo);
+        }
+        logLayer('    ==============')
+        for (let todo of layer.index.unfinished.items()) {
+            logLayer(' ...',  todo);
+        }
+    }
+
+    log(hr);
+    logApp('subscribing to layer index events');
     layer.index.ready.on('*', (channel: string, data: any) => {
-        logApp('got event from layer collection:', channel, data);
+        logApp(chalk.yellowBright('>>') + 'got event from layer collection:', channel, data);
     });
 
-    log('');
-    logApp('layer.get("abc")...');
-    logApp('... = ', await layer.get('abc'));
+    log(hr);
+    showIndex();
+
+    log(hr);
+    logApp('layer.getTimidly("abc")...');
+    logApp('... = ', layer.getTimidly('abc'));
     await sleep(100);
 
-    log('');
-    logApp('setting todo "abc"');
-    await layer.setState(keypair, 'abc', { text: 'apples', done: false });
+    log(hr);
+    logApp('layer.getAndQuery("abc")...');
+    logApp('... = ', await layer.getAndQuery('abc'));
+    await sleep(100);
+
+    log(hr);
+    showIndex();
+
+    log(hr);
+    logApp('setting partial todo "abc"');
+    await layer.setState(keypair, 'abc', { text: 'apples'});
     logApp('    ...done');
     await sleep(100);
 
-    log('');
-    logApp('layer.get("abc")...');
-    logApp('... = ', await layer.get('abc'));
+    log(hr);
+    showIndex();
+
+    log(hr);
+    logApp('layer.getTimidly("abc")...');
+    logApp('... = ', layer.getTimidly('abc'));
     await sleep(100);
 
-    log('');
+    log(hr);
+    logApp('layer.getAndQuery("abc")...');
+    logApp('... = ', await layer.getAndQuery('abc'));
+    await sleep(100);
+
+    log(hr);
+    showIndex();
+
+    log(hr);
+    logApp('setting the rest of todo "abc"');
+    await layer.setState(keypair, 'abc', { done: false });
+    logApp('    ...done');
+    await sleep(100);
+
+    log(hr);
+    showIndex();
+
+    log(hr);
+    logApp('layer.getTimidly("abc")...');
+    logApp('... = ', layer.getTimidly('abc'));
+    await sleep(100);
+
+    log(hr);
+    logApp('layer.getAndQuery("abc")...');
+    logApp('... = ', await layer.getAndQuery('abc'));
+    await sleep(100);
+
+    log(hr);
+    logApp('emptying the text from "abc"');
+    await layer.setState(keypair, 'abc', { text: '' });
+    logApp('    ...done');
+    await sleep(100);
+
+    log(hr);
+    showIndex();
+
+    log(hr);
+    logApp('layer.getTimidly("abc")...');
+    logApp('... = ', layer.getTimidly('abc'));
+    await sleep(100);
+
+    log(hr);
+    logApp('layer.getAndQuery("abc")...');
+    logApp('... = ', await layer.getAndQuery('abc'));
+    await sleep(100);
+
+    log(hr);
+    showIndex();
+
+    log(hr);
+    logApp('putting the text back');
+    await layer.setState(keypair, 'abc', { text: 'apples!!' });
+    logApp('    ...done');
+    await sleep(100);
+
+    log(hr);
+    logApp('manually emptying the index...');
+    layer.index.ready.deleteAll();
+    layer.index.unfinished.deleteAll();
+
+    log(hr);
+    showIndex();
+
+    log(hr);
+    logApp('getTimidly with data in Earthstar but the index is empty');
+    logApp('layer.getTimidly("abc")...');
+    logApp('... = ', layer.getTimidly('abc'));
+    await sleep(100);
+
+    log(hr);
+    logApp('getAndQueryLater with data in Earthstar but the index is empty');
+    logApp('layer.getAndQueryLater("abc")...');
+    logApp('... = ', layer.getAndQueryLater('abc'));
+    await sleep(100);
+
+    log(hr);
+    logApp('manually emptying the index...');
+    layer.index.ready.deleteAll();
+    layer.index.unfinished.deleteAll();
+
+    log(hr);
+    logApp('getAndQuery with data in Earthstar but the index is empty - should load the data');
+    logApp('layer.getAndQuery("abc")...');
+    logApp('... = ', await layer.getAndQuery('abc'));
+    await sleep(100);
+
+    log(hr);
+    showIndex();
+
+    // TODO: add a new item via ingest
+
+    log(hr);
     logTest('closing storage and quitting');
     await storage.close();
 }

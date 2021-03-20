@@ -86,6 +86,11 @@ export class Collection<T> {
             return false;
         }
     }
+    deleteAll(): void {
+        for (let id of this.ids()) {
+            this.delete(id);
+        }
+    }
 
     //----------------------------------------
     // READ
