@@ -12,6 +12,7 @@ import {
     StorageToAsync,
     generateAuthorKeypair,
 } from 'earthstar';
+import { match, true } from 'tap';
 
 //================================================================================
 // HELPERS
@@ -120,6 +121,7 @@ interface Todo2 {
 
 let TodoSpec2 = {
     id: stringFromPath({
+        path: '/todos/v1/id:{id}/*',
         minLength: 5,
         maxLength: 50,
     }),
@@ -138,10 +140,98 @@ let TodoSpec2 = {
     }),
 }
 
+let todoSpec7 = {
+    _path: '/todos/v1/{id}/{filename}/',
+    id: new StringField({
+        path: { 'id': '*'},
+        minLength: 5,
+        maxLength: 200
+    }),
+    text: new StringField({
+        path: { 'filename': 'text.txt' },
+        maxLength: 200,
+    }),
+    done: new BooleanField({
+        pathField: { 'filename': 'done.json' },
+    }),
+    priority: new IntegerField({
+        pathField: { 'filename': 'priority.json' },
+        min: 0,
+        max: 1,
+        required: false,
+    }),
+}
 
+// query first approach
+let storage: any = 123;
+let todoCollection = new Map<string, Todo>();
+let todoLeftovers = new Map<string, Todo>();
+let docs = storage.documents({
+    pathStartsWith: '/todos/v1/id:',
+});
+
+
+/*
+for (let doc of docs) {
+    let { id, filename } = extract(doc.path, '/todos/v1/{id}/{filename}');
+    if (!idField.validate(id)) { continue }
+    let todo: Partial<Todo> = todoCollection.get(id) || todoLeftovers.get(id) || { id };
+    if (filename === 'text.txt') {
+        updateField(textField, todo, doc.content);
+    } else if (filename === 'done.json') {
+        updateField(doneField, todo, doc.content);
+    } else if (filename === 'priority.json') {
+        updateField(priorityField, todo, doc.content);
+    }
+    if (isComplete(todo)) {
+        todoLeftovers.remove(id);
+        todoCollection.set(id, todo as Todo)
+    } else {
+        todoCollection.remove(id);
+        todoLeftovers.set(id, todo)
+    }
+]
+*/
+
+// queryForAll
 // pathIsValid -- given a doc's path, is it valid for this field?
 // contentIsValid -- given a doc's content, is it valid for this field?
 // objectIsComplete -- given the final domain object, is it ready and complete?
+
+
+//  
+//  
+//  todoSpec = new Spec({
+//      path: '/todos/v1/{id}/{filename}'
+//  }, {
+//      id {
+//          pathWildcard: 'id'
+//      }
+//      done {
+//          pathWildcard: ['filename', 'done.json']
+//      }
+//      text {
+//          pathWildcard: ['filename', 'text.txt']
+//      }
+//  });
+//  
+//  todoSpec = {
+//      id: {
+//          path: '/todos/v1/*/'
+//      }
+//      done: {
+//          path: '/todos/v1/{id}/done.json'
+//      }
+//      text: {
+//          path: '/todos/v1/{id}/text.txt'
+//      }
+//  }
+//  
+//  
+//  
+//  
+//  
+
 
 
 /*
