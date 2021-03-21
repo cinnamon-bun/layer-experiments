@@ -14,8 +14,8 @@ import {
 } from 'earthstar';
 import {
     Collection
-} from './collection'
-import { sleep } from './utils';
+} from '../src/collection'
+import { sleep } from '../src/utils';
 
 import chalk = require('chalk');
 
